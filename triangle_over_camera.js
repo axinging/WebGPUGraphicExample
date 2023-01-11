@@ -36,7 +36,7 @@ function getTextureShader() {
       vec4<f32>(-1.0,  1.0, 0.0, 1.0)
     );
     return pos[VertexIndex];
-}
+  }
     `;
   const fragmentShaderCode = `
   @group(0) @binding(0) var s : sampler;
@@ -102,7 +102,7 @@ async function drawQuad() {
       ],
     },
     primitive: {
-      topology: 'triangle-list',
+      topology: 'line-list',
     }
   });
   recordAndSubmit(device, swapChain, pipeline);

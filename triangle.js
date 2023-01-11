@@ -45,10 +45,9 @@ function recordAndSubmit(device, swapChain, pipeline) {
     device.queue.submit([commandEncoder.finish()]);
 }
 
-(async () => {   
-    const [device, swapChain, presentationFormat] = await getDevice();
+function getPipeline(device, presentationFormat) {
     const [vertexShaderCode, fragmentShaderCode] = getShader();
-    const pipeline = device.createRenderPipeline({
+    return device.createRenderPipeline({
         layout: 'auto',
         vertex: {
             module: device.createShaderModule({
@@ -69,5 +68,11 @@ function recordAndSubmit(device, swapChain, pipeline) {
             topology: 'triangle-list',
         }
     });
+}
+
+(async () => {   
+    const [device, swapChain, presentationFormat] = await getDevice();
+    const pipeline = getPipeline(device, presentationFormat);
+
     recordAndSubmit(device, swapChain, pipeline);
 })();
