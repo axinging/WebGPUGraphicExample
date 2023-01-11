@@ -19,3 +19,5 @@ export async function getDevice() {
     });
     return [device, swapChain, presentationFormat];
   }
+
+  export const presentationFormat = 'bgra8unorm';
