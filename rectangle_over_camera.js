@@ -30,7 +30,7 @@ function getShader() {
   return [vertexShaderCode, fragmentShaderCode];
 }
 
-function recordAndSubmit(device, swapChain, pipeline) {
+function recordAndSubmit(pipeline) {
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
 
@@ -50,41 +50,45 @@ function recordAndSubmit(device, swapChain, pipeline) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
-async function drawQuad() {
-  const [vertexShaderCode, fragmentShaderCode] = getShader();
-  const pipeline = device.createRenderPipeline({
-    layout: 'auto',
-    vertex: {
-      module: device.createShaderModule({code: vertexShaderCode}),
-      entryPoint: 'main'
-    },
-    fragment: {
-      module: device.createShaderModule({code: fragmentShaderCode}),
-      entryPoint: 'main',
-      targets: [
-        {
-          format: presentationFormat,
-          blend: {
-            color: {
-              srcFactor: 'src-alpha',
-              dstFactor: 'one-minus-src-alpha',
-              operation: 'add',
-            },
-            alpha: {
-              srcFactor: 'one',
-              dstFactor: 'one-minus-src-alpha',
-              operation: 'add',
+async function drawQuad(pipeline) {
+  recordAndSubmit(pipeline);
+}
+
+function drawQuadInit() {
+    const [vertexShaderCode, fragmentShaderCode] = getShader();
+    const pipeline = device.createRenderPipeline({
+      layout: 'auto',
+      vertex: {
+        module: device.createShaderModule({code: vertexShaderCode}),
+        entryPoint: 'main'
+      },
+      fragment: {
+        module: device.createShaderModule({code: fragmentShaderCode}),
+        entryPoint: 'main',
+        targets: [
+          {
+            format: presentationFormat,
+            blend: {
+              color: {
+                srcFactor: 'src-alpha',
+                dstFactor: 'one-minus-src-alpha',
+                operation: 'add',
+              },
+              alpha: {
+                srcFactor: 'one',
+                dstFactor: 'one-minus-src-alpha',
+                operation: 'add',
+              },
             },
           },
-        },
-      ],
-    },
-    primitive: {
-      topology: 'line-list',
-    }
-  });
-  recordAndSubmit(device, swapChain, pipeline);
-}
+        ],
+      },
+      primitive: {
+        topology: 'line-list',
+      }
+    });
+    return pipeline;
+  }
 
 const kWidth = 640;
 const kHeight = 480;
@@ -98,7 +102,7 @@ async function renderResult() {
     });
   }
   drawTexture(device, swapChain, pipeline, camera.video);
-  await drawQuad();
+  await drawQuad(quadPipeline);
 }
 
 async function renderPrediction() {
@@ -107,6 +111,7 @@ async function renderPrediction() {
 };
 
 let camera;
+let quadPipeline;
 let device, swapChain, pipeline;
 async function app() {
   // Gui content will change depending on which model is in the query string.
@@ -117,6 +122,7 @@ async function app() {
   swapChain = swapChain1;
   pipeline = pipeline1;
 
+  quadPipeline = drawQuadInit();
 
   renderPrediction(device, swapChain, pipeline);
 };
