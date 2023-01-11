@@ -1,5 +1,5 @@
-import {CineonToneMapping} from 'three';
 import {Camera} from './camera';
+import {getDevice} from './webgpu_util';
 let rafId;
 function getShader() {
   const vertexShaderCode = `
@@ -20,6 +20,32 @@ function getShader() {
         fn main() -> @location(0) vec4<f32> {
           return vec4<f32>(1.0, 0.0, 0.0, 1.0);
         }
+    `;
+  return [vertexShaderCode, fragmentShaderCode];
+}
+
+function getTextureShader() {
+  const vertexShaderCode = `
+  @vertex fn main(@builtin(vertex_index) VertexIndex : u32) -> @builtin(position) vec4<f32> {
+    var pos = array<vec4<f32>, 6>(
+      vec4<f32>( 1.0,  1.0, 0.0, 1.0),
+      vec4<f32>( 1.0, -1.0, 0.0, 1.0),
+      vec4<f32>(-1.0, -1.0, 0.0, 1.0),
+      vec4<f32>( 1.0,  1.0, 0.0, 1.0),
+      vec4<f32>(-1.0, -1.0, 0.0, 1.0),
+      vec4<f32>(-1.0,  1.0, 0.0, 1.0)
+    );
+    return pos[VertexIndex];
+}
+    `;
+  const fragmentShaderCode = `
+  @group(0) @binding(0) var s : sampler;
+  @group(0) @binding(1) var t : texture_external;
+
+  @fragment fn main(@builtin(position) FragCoord : vec4<f32>)
+                           -> @location(0) vec4<f32> {
+      return textureSampleBaseClampToEdge(t, s, FragCoord.xy / vec2<f32>(640.0, 480.0));
+  }
     `;
   return [vertexShaderCode, fragmentShaderCode];
 }
@@ -45,29 +71,6 @@ function recordAndSubmit(device, swapChain, pipeline) {
 }
 const kFormat = 'bgra8unorm';
 const presentationFormat = 'bgra8unorm';
-
-async function getDevice() {
-  if (!navigator.gpu) {
-    alert(
-        `WebGPU is not supported. Please use Chrome Canary browser with flag --enable-unsafe-webgpu enabled.`);
-    return;
-  }
-
-  const adapter = await navigator.gpu.requestAdapter();
-  const device = await adapter.requestDevice();
-
-  const canvas = document.getElementById('canvas')
-  const swapChain = canvas.getContext('webgpu');
-
-  const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-  swapChain.configure({
-    device,
-    format: presentationFormat,
-    alphaMode: 'opaque',
-  });
-  return [device, swapChain, presentationFormat];
-}
-
 
 async function drawQuad() {
   const [vertexShaderCode, fragmentShaderCode] = getShader();
@@ -111,37 +114,18 @@ async function drawQuad() {
 
 
 function createExternalTextureSamplingTestPipeline(device) {
+  const [vertexShaderCode, fragmentShaderCode] = getTextureShader();
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
       module: device.createShaderModule({
-        code: `
-          @vertex fn main(@builtin(vertex_index) VertexIndex : u32) -> @builtin(position) vec4<f32> {
-              var pos = array<vec4<f32>, 6>(
-                vec4<f32>( 1.0,  1.0, 0.0, 1.0),
-                vec4<f32>( 1.0, -1.0, 0.0, 1.0),
-                vec4<f32>(-1.0, -1.0, 0.0, 1.0),
-                vec4<f32>( 1.0,  1.0, 0.0, 1.0),
-                vec4<f32>(-1.0, -1.0, 0.0, 1.0),
-                vec4<f32>(-1.0,  1.0, 0.0, 1.0)
-              );
-              return pos[VertexIndex];
-          }
-          `,
+        code:vertexShaderCode,
       }),
       entryPoint: 'main',
     },
     fragment: {
       module: device.createShaderModule({
-        code: `
-        @group(0) @binding(0) var s : sampler;
-        @group(0) @binding(1) var t : texture_external;
-
-        @fragment fn main(@builtin(position) FragCoord : vec4<f32>)
-                                 -> @location(0) vec4<f32> {
-            return textureSampleBaseClampToEdge(t, s, FragCoord.xy / vec2<f32>(640.0, 480.0));
-        }
-          `,
+        code: fragmentShaderCode,
       }),
       entryPoint: 'main',
       targets: [

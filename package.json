@@ -19,8 +19,10 @@
     "scatter-gl": "0.0.8"
   },
   "scripts": {
-    "watch": "cross-env NODE_ENV=development parcel triangle_over_camera.html --no-hmr --open",
-    "build": "cross-env NODE_ENV=production parcel build triangle_over_camera.html --public-url ./",
+    "watch": "cross-env NODE_ENV=development parcel triangle.html --no-hmr --open",
+    "build": "cross-env NODE_ENV=production parcel build triangle.html --public-url ./",
+    "watchblending": "cross-env NODE_ENV=development parcel triangle_over_camera.html --no-hmr --open",
+    "buildlending": "cross-env NODE_ENV=production parcel build triangle_over_camera.html --public-url ./",
     "watchcamera": "cross-env NODE_ENV=development parcel camera_preview.html --no-hmr --open",
     "buildcamera": "cross-env NODE_ENV=production parcel build camera_preview.html --public-url ./",
     "lint": "eslint ."

@@ -1,3 +1,5 @@
+import {getDevice} from './webgpu_util';
+
 function getShader() {
     const vertexShaderCode =
         `
@@ -43,25 +45,8 @@ function recordAndSubmit(device, swapChain, pipeline) {
     device.queue.submit([commandEncoder.finish()]);
 }
 
-(async () => {
-    if (!navigator.gpu) {
-        alert(`WebGPU is not supported. Please use Chrome Canary browser with flag --enable-unsafe-webgpu enabled.`);
-        return;
-    }
-
-    const adapter = await navigator.gpu.requestAdapter();
-    const device = await adapter.requestDevice();
-
-    const canvas = document.getElementById('canvas')
-    const swapChain = canvas.getContext('webgpu');
-
-    const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
-    swapChain.configure({
-      device,
-      format: presentationFormat,
-      alphaMode: 'opaque',
-    });
-
+(async () => {   
+    const [device, swapChain, presentationFormat] = await getDevice();
     const [vertexShaderCode, fragmentShaderCode] = getShader();
     const pipeline = device.createRenderPipeline({
         layout: 'auto',
