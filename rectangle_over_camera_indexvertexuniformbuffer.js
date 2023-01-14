@@ -1,17 +1,25 @@
 import {Camera} from './camera';
 import {drawInit, drawTexture} from './webgpu_draw_texture';
-import {presentationFormat, createIndexBuffer, createVertexBuffer} from './webgpu_util';
+import {createBindGroup, createIndexBuffer, createUniformBuffer, createVertexBuffer, presentationFormat} from './webgpu_util';
 
 let rafId;
 function getShader() {
   const vertexShaderCode = `
+  struct Uniforms {
+    x : f32,
+    y : f32,
+    width : f32,
+    height : f32,
+  }
+  
+  @binding(0) @group(0) var<uniform> uniforms : Uniforms;
   @vertex
   fn main(
     @builtin(vertex_index) VertexIndex : u32,
     @location(0) position : vec4<f32>,
     @location(1) uv : vec2<f32>
   ) -> @builtin(position) vec4<f32> {
-      let positionOut = vec4<f32>(position.x * 1.8, position.y * 1.8, position.z, position.w);
+      let positionOut = vec4<f32>(position.x + uniforms.x, position.y * 1.8, position.z, position.w);
       return positionOut;
   }
     `;
@@ -44,6 +52,7 @@ export const cubeColorOffset =
 export const cubeUVOffset = 4 * 8;
 export const cubeVertexCount = 4;
 
+let frameIndex = 0;
 function recordAndSubmit(pipeline) {
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
@@ -57,10 +66,18 @@ function recordAndSubmit(pipeline) {
     }]
   };
 
+  const uniformData =
+      new Float32Array([0.1 * frameIndex % 3, 0.1 * frameIndex % 3, 1, 1]);
+  frameIndex++;
+  device.queue.writeBuffer(
+      uniformBuffer, 0, uniformData.buffer, uniformData.byteOffset,
+      uniformData.byteLength);
+
   const passEncoder = commandEncoder.beginRenderPass(renderPassDescriptor);
   passEncoder.setPipeline(pipeline);
   passEncoder.setVertexBuffer(0, verticesBuffer);
   passEncoder.setIndexBuffer(indexBuffer, 'uint32');
+  passEncoder.setBindGroup(0, bindGroup);
   passEncoder.drawIndexed(8);
   passEncoder.end();
   device.queue.submit([commandEncoder.finish()]);
@@ -72,11 +89,15 @@ async function drawQuad(pipeline) {
 
 let indexBuffer;
 let verticesBuffer;
+let uniformBuffer;
+let bindGroup;
 
 function drawQuadInit() {
   // Create a vertex buffer from the cube data.
   verticesBuffer = createVertexBuffer(device, cubeVertexArray);
   indexBuffer = createIndexBuffer(device, indexArray);
+  uniformBuffer = createUniformBuffer(device);
+
 
   const [vertexShaderCode, fragmentShaderCode] = getShader();
   const pipeline = device.createRenderPipeline({
@@ -129,6 +150,7 @@ function drawQuadInit() {
       topology: 'line-list',
     }
   });
+  bindGroup = createBindGroup(device, pipeline, uniformBuffer, 16);
   return pipeline;
 }
 

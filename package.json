@@ -25,6 +25,8 @@
     "buildrectanglewire": "cross-env NODE_ENV=production parcel build rectangle_wire.html --public-url ./",
     "watchrectcameraivb": "cross-env NODE_ENV=development parcel rectangle_over_camera_indexvertexbuffer.html --no-hmr --open",
     "buildrectcameraivb": "cross-env NODE_ENV=production parcel build rectangle_over_camera_indexvertexbuffer.html --public-url ./",
+    "watchrectcameraivub": "cross-env NODE_ENV=development parcel rectangle_over_camera_indexvertexuniformbuffer.html --no-hmr --open",
+    "buildrectcameraivub": "cross-env NODE_ENV=production parcel build rectangle_over_camera_indexvertexuniformbuffer.html --public-url ./",
     "watchrectcameravb": "cross-env NODE_ENV=development parcel rectangle_over_camera_vertexbuffer.html --no-hmr --open",
     "buildrectcameravb": "cross-env NODE_ENV=production parcel build rectangle_over_camera_vertexbuffer.html --public-url ./",
     "watchrectcamera": "cross-env NODE_ENV=development parcel rectangle_over_camera.html --no-hmr --open",
