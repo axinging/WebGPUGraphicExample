@@ -1,7 +1,7 @@
 {
-  "name": "facedetection_demo",
+  "name": "webgpugraphicsexample",
   "version": "0.0.1",
-  "description": "Demo for face detection api",
+  "description": "Demo for face webgpu graphics",
   "main": "index.js",
   "license": "Apache-2.0",
   "private": true,
@@ -9,7 +9,6 @@
     "node": ">=8.9.0"
   },
   "dependencies": {
-    "@mediapipe/face_detection": "~0.4.0",
     "@tensorflow-models/face-detection": "^1.0.1",
     "@tensorflow/tfjs-backend-wasm": "^4.0.0",
     "@tensorflow/tfjs-backend-webgl": "^3.14.0",
@@ -33,6 +32,8 @@
     "buildrectcamera": "cross-env NODE_ENV=production parcel build rectangle_over_camera.html --public-url ./",
     "watchblending": "cross-env NODE_ENV=development parcel triangle_over_camera.html --no-hmr --open",
     "buildblending": "cross-env NODE_ENV=production parcel build triangle_over_camera.html --public-url ./",
+    "watchtfjs": "cross-env NODE_ENV=development parcel drawTFJSTensor.html --no-hmr --open",
+    "buildtfjs": "cross-env NODE_ENV=production parcel build drawTFJSTensor.html --public-url ./",
     "watchcamera": "cross-env NODE_ENV=development parcel camera_preview.html --no-hmr --open",
     "buildcamera": "cross-env NODE_ENV=production parcel build camera_preview.html --public-url ./",
     "lint": "eslint ."

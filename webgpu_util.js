@@ -44,12 +44,21 @@ export function createIndexBuffer(device, indexArray) {
 }
 
 export function createUniformBuffer(device) {
-  const uniformBufferSize = 4 * 4;  // 4x4 matrix
+  const uniformBufferSize = 4 * 4;
   const uniformBuffer = device.createBuffer({
     size: uniformBufferSize,
     usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
   });
   return uniformBuffer;
+}
+
+export function createStorageBuffer(device) {
+  const uniformBufferSize = 4 * 4;
+  const storageBuffer = device.createBuffer({
+    size: uniformBufferSize,
+    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
+  });
+  return storageBuffer;
 }
 
 export function createBindGroup(device, pipeline, uniformBuffer, uniformBufferSize = 16) {
