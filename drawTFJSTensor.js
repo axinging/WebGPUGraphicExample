@@ -88,7 +88,7 @@ function recordAndSubmit(pipeline) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
-async function drawQuad(pipeline) {
+function drawQuad(pipeline) {
   recordAndSubmit(pipeline);
 }
 
@@ -220,7 +220,7 @@ async function renderResult() {
     });
   }
   drawTexture(device, swapChain, pipeline, camera.video);
-  await drawQuad(quadPipeline);
+  drawQuad(quadPipeline);
 }
 
 async function renderPrediction() {
