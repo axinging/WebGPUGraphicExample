@@ -61,7 +61,22 @@ export function createStorageBuffer(device) {
   return storageBuffer;
 }
 
-export function createBindGroup(device, pipeline, uniformBuffer, uniformBufferSize = 16) {
+// ? GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
+export function createBuffer(device, usage, size, array = null) {
+  const mappedAtCreation = array ? true : false;
+  const buffer = device.createBuffer({size, usage, mappedAtCreation});
+  if (array instanceof Float32Array) {
+    new Float32Array(buffer.getMappedRange()).set(array);
+    buffer.unmap();
+  } else if (array instanceof Uint32Array) {
+    new Float32Array(buffer.getMappedRange()).set(array);
+    buffer.unmap();
+  }
+  return buffer;
+}
+
+export function createBindGroup(
+    device, pipeline, uniformBuffer, uniformBufferSize = 16) {
   const uniformBindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [
