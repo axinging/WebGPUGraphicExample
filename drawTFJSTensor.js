@@ -4,7 +4,7 @@ import '@tensorflow/tfjs-backend-webgpu';
 import * as tf from '@tensorflow/tfjs-core';
 
 import {Camera} from './camera';
-import {createExternalTextureSamplingTestPipeline, drawTexture} from './webgpu_draw_texture';
+import {createExternalTexturePipeline, drawTexture} from './webgpu_draw_texture';
 import {createBuffer} from './webgpu_util';
 
 let rafId;
@@ -227,7 +227,7 @@ export async function getTFJSDevice() {
 
 async function drawTFJSInit() {
   const [device, swapChain] = await getTFJSDevice();
-  const pipeline = createExternalTextureSamplingTestPipeline(device);
+  const pipeline = createExternalTexturePipeline(device);
   return [device, swapChain, pipeline];
 }
 

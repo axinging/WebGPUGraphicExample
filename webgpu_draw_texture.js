@@ -1,5 +1,5 @@
 import {getDevice, presentationFormat} from './webgpu_util';
-function getTextureShader() {
+function getExternalTextureShader() {
   const vertexShaderCode = `
     @vertex fn main(@builtin(vertex_index) VertexIndex : u32) -> @builtin(position) vec4<f32> {
       var pos = array<vec4<f32>, 6>(
@@ -28,7 +28,7 @@ function getTextureShader() {
 export function drawTexture(device, swapChain, pipeline, video) {
   // const commandEncoder = device.createCommandEncoder();
   const bindGroup =
-      createExternalTextureSamplingTestBindGroup(device, video, pipeline);
+      createExternalTextureBindGroup(device, video, pipeline);
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
 
@@ -50,8 +50,8 @@ export function drawTexture(device, swapChain, pipeline, video) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
-export function createExternalTextureSamplingTestPipeline(device) {
-  const [vertexShaderCode, fragmentShaderCode] = getTextureShader();
+export function createExternalTexturePipeline(device) {
+  const [vertexShaderCode, fragmentShaderCode] = getExternalTextureShader();
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
@@ -77,7 +77,7 @@ export function createExternalTextureSamplingTestPipeline(device) {
   return pipeline;
 }
 
-export function createExternalTextureSamplingTestBindGroup(
+export function createExternalTextureBindGroup(
     device, source, pipeline) {
   const linearSampler = device.createSampler();
   const externalTexture = device.importExternalTexture({
@@ -104,6 +104,6 @@ export function createExternalTextureSamplingTestBindGroup(
 
 export async function drawInit() {
     const [device, swapChain, presentationFormat] = await getDevice();
-    const pipeline = createExternalTextureSamplingTestPipeline(device);
+    const pipeline = createExternalTexturePipeline(device);
     return [device, swapChain, pipeline];
 }

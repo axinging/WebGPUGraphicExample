@@ -24,7 +24,7 @@ function getShader() {
   return [vertexShaderCode, fragmentShaderCode];
 }
 
-function getTextureShader() {
+function getExternalTextureShader() {
   const vertexShaderCode = `
   @vertex fn main(@builtin(vertex_index) VertexIndex : u32) -> @builtin(position) vec4<f32> {
     var pos = array<vec4<f32>, 6>(
@@ -113,8 +113,8 @@ async function drawQuad() {
 })();
 
 
-function createExternalTextureSamplingTestPipeline(device) {
-  const [vertexShaderCode, fragmentShaderCode] = getTextureShader();
+function createExternalTexturePipeline(device) {
+  const [vertexShaderCode, fragmentShaderCode] = getExternalTextureShader();
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
@@ -140,7 +140,7 @@ function createExternalTextureSamplingTestPipeline(device) {
   return pipeline;
 }
 
-function createExternalTextureSamplingTestBindGroup(device, source, pipeline) {
+function createExternalTextureBindGroup(device, source, pipeline) {
   const linearSampler = device.createSampler();
   const externalTexture = device.importExternalTexture({
     /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
@@ -177,14 +177,14 @@ async function drawInit() {
     usage: GPUTextureUsage.COPY_SRC | GPUTextureUsage.RENDER_ATTACHMENT,
   });
 
-  const pipeline = createExternalTextureSamplingTestPipeline(device);
+  const pipeline = createExternalTexturePipeline(device);
   return [device, swapChain, pipeline];
 }
 
 function drawTexture(device, swapChain, pipeline, video) {
   // const commandEncoder = device.createCommandEncoder();
   const bindGroup =
-      createExternalTextureSamplingTestBindGroup(device, video, pipeline);
+      createExternalTextureBindGroup(device, video, pipeline);
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
 
