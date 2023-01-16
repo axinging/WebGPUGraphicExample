@@ -4,7 +4,7 @@ import '@tensorflow/tfjs-backend-webgpu';
 import * as tf from '@tensorflow/tfjs-core';
 
 import {Camera} from './camera';
-import {createExternalTexturePipeline, drawTexture} from './webgpu_draw_texture';
+import {createExternalTexturePipeline, drawTexture} from './TensorRendererTexture';
 import {createBuffer} from './webgpu_util';
 
 let rafId;
@@ -39,7 +39,7 @@ function getQuadShader() {
 }
 
 let frameIndex = 0;
-function recordAndSubmit(device, swapChain, pipeline) {
+function drawQuad(device, swapChain, bindGroup, pipeline) {
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
 
@@ -69,15 +69,6 @@ function recordAndSubmit(device, swapChain, pipeline) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
-function drawQuad(device, swapChain, pipeline) {
-  recordAndSubmit(device, swapChain, pipeline);
-}
-
-let indexBuffer;
-let verticesBuffer;
-let uniformBuffer;
-let bindGroup;
-
 function getTensorBuffer() {
   const data = [0.2, 0.2, 1, 1];
   const dataB = [0, 0, 0, 0];
@@ -90,9 +81,12 @@ function getTensorBuffer() {
   return res.buffer;
 }
 
+
 const TENSOR_UNIFORM_SIZE = 16;
 
-
+let indexBuffer;
+let verticesBuffer;
+let uniformBuffer;
 function drawQuadInit(device) {
   const quadVertexArray = new Float32Array([
     // float4 position, float4 color, float2 uv,
@@ -183,17 +177,17 @@ function drawQuadInit(device) {
       size: TENSOR_UNIFORM_SIZE,
     }
   ];
-  bindGroup = device.createBindGroup({
+  const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: bindings.map((b, i) => ({binding: i, resource: b})),
   });
-  return pipeline;
+  return [bindGroup, pipeline];
 }
 
 const kWidth = 640;
 const kHeight = 480;
 
-async function renderResult(device, swapChain, pipeline, quadPipeline) {
+async function renderResult(device, swapChain, pipeline, quadBindGroup, quadPipeline) {
   if (camera.video.readyState < 2) {
     await new Promise((resolve) => {
       camera.video.onloadeddata = () => {
@@ -202,15 +196,15 @@ async function renderResult(device, swapChain, pipeline, quadPipeline) {
     });
   }
   drawTexture(device, swapChain, pipeline, camera.video);
-  drawQuad(device, swapChain, quadPipeline);
+  drawQuad(device, swapChain, quadBindGroup, quadPipeline);
 }
 
-async function renderPrediction(device, swapChain, pipeline, quadPipeline) {
-  await renderResult(device, swapChain, pipeline, quadPipeline);
+async function renderPrediction(device, swapChain, pipeline, quadBindGroup, quadPipeline) {
+  await renderResult(device, swapChain, pipeline, quadBindGroup, quadPipeline);
   // rafId = requestAnimationFrame(renderPrediction);
 
   rafId = requestAnimationFrame(function() {
-    renderPrediction(device, swapChain, pipeline, quadPipeline);
+    renderPrediction(device, swapChain, pipeline, quadBindGroup, quadPipeline);
   });
 };
 
@@ -249,9 +243,9 @@ async function app() {
   camera = await Camera.setupCamera(config);
 
 
-  const quadPipeline = drawQuadInit(device);
+  const [quadBindGroup, quadPipeline] = drawQuadInit(device);
 
-  renderPrediction(device, swapChain, pipeline, quadPipeline);
+  renderPrediction(device, swapChain, pipeline, quadBindGroup, quadPipeline);
 };
 
 (async () => {

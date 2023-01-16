@@ -32,8 +32,8 @@
     "buildrectcamera": "cross-env NODE_ENV=production parcel build rectangle_over_camera.html --public-url ./",
     "watchblending": "cross-env NODE_ENV=development parcel triangle_over_camera.html --no-hmr --open",
     "buildblending": "cross-env NODE_ENV=production parcel build triangle_over_camera.html --public-url ./",
-    "watchtfjs": "cross-env NODE_ENV=development parcel drawTFJSTensor.html --no-hmr --open",
-    "buildtfjs": "cross-env NODE_ENV=production parcel build drawTFJSTensor.html --public-url ./",
+    "watchtfjs": "cross-env NODE_ENV=development parcel TensorRenderer.html --no-hmr --open",
+    "buildtfjs": "cross-env NODE_ENV=production parcel build TensorRenderer.html --public-url ./",
     "watchcamera": "cross-env NODE_ENV=development parcel camera_preview.html --no-hmr --open",
     "buildcamera": "cross-env NODE_ENV=production parcel build camera_preview.html --public-url ./",
     "lint": "eslint ."
