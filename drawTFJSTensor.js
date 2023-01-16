@@ -39,7 +39,7 @@ function getQuadShader() {
 }
 
 let frameIndex = 0;
-function recordAndSubmit(pipeline) {
+function recordAndSubmit(device, pipeline) {
   const commandEncoder = device.createCommandEncoder();
   const textureView = swapChain.getCurrentTexture().createView();
 
@@ -69,8 +69,8 @@ function recordAndSubmit(pipeline) {
   device.queue.submit([commandEncoder.finish()]);
 }
 
-function drawQuad(pipeline) {
-  recordAndSubmit(pipeline);
+function drawQuad(device, pipeline) {
+  recordAndSubmit(device, pipeline);
 }
 
 let indexBuffer;
@@ -93,18 +93,18 @@ function getTensorBuffer() {
 const TENSOR_UNIFORM_SIZE = 16;
 
 
-function drawQuadInit() {
+function drawQuadInit(device) {
   const quadVertexArray = new Float32Array([
     // float4 position, float4 color, float2 uv,
     0.5,  0.5,  1, 1, 1, 0, 1, 1, 1, 1, -0.5, 0.5,  1, 1, 0, 0, 1, 1, 0, 1,
     -0.5, -0.5, 1, 1, 1, 0, 1, 1, 1, 1, 0.5,  -0.5, 1, 1, 0, 0, 0, 1, 0, 0,
   ]);
-  
+
   const quadIndexArray = new Uint32Array([
     // float4 position, float4 color, float2 uv,
     0, 1, 1, 2, 2, 3, 3, 0
   ]);
-  
+
   // Create a vertex buffer from the quad data.
   verticesBuffer = createBuffer(
       device, GPUBufferUsage.VERTEX, quadVertexArray.byteLength,
@@ -112,7 +112,8 @@ function drawQuadInit() {
   indexBuffer = createBuffer(
       device, GPUBufferUsage.INDEX, quadIndexArray.byteLength, quadIndexArray);
   uniformBuffer = createBuffer(
-      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, TENSOR_UNIFORM_SIZE);
+      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      TENSOR_UNIFORM_SIZE);
 
   const quadVertexSize = 4 * 10;  // Byte size of one quad vertex.
   const quadPositionOffset = 0;
@@ -191,7 +192,7 @@ function drawQuadInit() {
 const kWidth = 640;
 const kHeight = 480;
 
-async function renderResult() {
+async function renderResult(device, swapChain, pipeline) {
   if (camera.video.readyState < 2) {
     await new Promise((resolve) => {
       camera.video.onloadeddata = () => {
@@ -200,12 +201,16 @@ async function renderResult() {
     });
   }
   drawTexture(device, swapChain, pipeline, camera.video);
-  drawQuad(quadPipeline);
+  drawQuad(device, quadPipeline);
 }
 
-async function renderPrediction() {
-  await renderResult();
-  rafId = requestAnimationFrame(renderPrediction);
+async function renderPrediction(device, swapChain, pipeline) {
+  await renderResult(device, swapChain, pipeline);
+  // rafId = requestAnimationFrame(renderPrediction);
+
+  rafId = requestAnimationFrame(function() {
+    renderPrediction(device, swapChain, pipeline);
+  });
 };
 
 export async function getTFJSDevice() {
@@ -233,11 +238,11 @@ async function drawTFJSInit() {
 
 let camera;
 let quadPipeline;
-let device, swapChain, pipeline;
+let swapChain, pipeline;
 let tensorBuffer;
 async function app() {
   const [device1, swapChain1, pipeline1] = await drawTFJSInit();
-  device = device1;
+  const device = device1;
   swapChain = swapChain1;
   pipeline = pipeline1;
   tensorBuffer = getTensorBuffer();
@@ -247,7 +252,7 @@ async function app() {
   camera = await Camera.setupCamera(config);
 
 
-  quadPipeline = drawQuadInit();
+  quadPipeline = drawQuadInit(device);
 
   renderPrediction(device, swapChain, pipeline);
 };
