@@ -20,47 +20,6 @@ export async function getDevice() {
   return [device, swapChain, presentationFormat];
 }
 
-export function createVertexBuffer(device, vertexArray) {
-  // Create a vertex buffer from the cube data.
-  const verticesBuffer1 = device.createBuffer({
-    size: vertexArray.byteLength,
-    usage: GPUBufferUsage.VERTEX,
-    mappedAtCreation: true,
-  });
-  new Float32Array(verticesBuffer1.getMappedRange()).set(vertexArray);
-  verticesBuffer1.unmap();
-  return verticesBuffer1;
-}
-
-export function createIndexBuffer(device, indexArray) {
-  const indexBuffer1 = device.createBuffer({
-    size: indexArray.byteLength,
-    usage: GPUBufferUsage.INDEX,
-    mappedAtCreation: true,
-  });
-  new Uint32Array(indexBuffer1.getMappedRange()).set(indexArray);
-  indexBuffer1.unmap();
-  return indexBuffer1;
-}
-
-export function createUniformBuffer(device) {
-  const uniformBufferSize = 4 * 4;
-  const uniformBuffer = device.createBuffer({
-    size: uniformBufferSize,
-    usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-  });
-  return uniformBuffer;
-}
-
-export function createStorageBuffer(device) {
-  const uniformBufferSize = 4 * 4;
-  const storageBuffer = device.createBuffer({
-    size: uniformBufferSize,
-    usage: GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE,
-  });
-  return storageBuffer;
-}
-
 // ? GPUBufferUsage.VERTEX | GPUBufferUsage.STORAGE
 export function createBuffer(device, usage, size, array = null) {
   const mappedAtCreation = array ? true : false;
@@ -69,7 +28,7 @@ export function createBuffer(device, usage, size, array = null) {
     new Float32Array(buffer.getMappedRange()).set(array);
     buffer.unmap();
   } else if (array instanceof Uint32Array) {
-    new Float32Array(buffer.getMappedRange()).set(array);
+    new Uint32Array(buffer.getMappedRange()).set(array);
     buffer.unmap();
   }
   return buffer;

@@ -145,16 +145,15 @@ export function createBindGroup2(
 
 function drawQuadInit() {
   // Create a vertex buffer from the cube data.
-  /*
-  verticesBuffer = createBuffer(device, GPUBufferUsage.VERTEX,
-  cubeVertexArray.byteLength, cubeVertexArray);; indexBuffer =
-  createBuffer(device, GPUBufferUsage.INDEX, indexArray.byteLength, indexArray);
-  uniformBuffer = createBuffer(device, GPUBufferUsage.UNIFORM |
-  GPUBufferUsage.COPY_DST, 16);
-  */
-  verticesBuffer = createVertexBuffer(device, cubeVertexArray);
-  indexBuffer = createIndexBuffer(device, indexArray);
-  uniformBuffer = createUniformBuffer(device);
+  verticesBuffer = createBuffer(
+      device, GPUBufferUsage.VERTEX, cubeVertexArray.byteLength,
+      cubeVertexArray);
+  indexBuffer = createBuffer(
+      device, GPUBufferUsage.INDEX, indexArray.byteLength, indexArray);
+  uniformBuffer = createBuffer(
+      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, 16);
+
+
   const cubeVertexSize = 4 * 10;  // Byte size of one cube vertex.
   const cubePositionOffset = 0;
   const cubeColorOffset = 4 * 4;  // Byte offset of cube vertex color attribute.
