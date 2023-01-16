@@ -4,11 +4,11 @@ import '@tensorflow/tfjs-backend-webgpu';
 import * as tf from '@tensorflow/tfjs-core';
 
 import {Camera} from './camera';
-import {createExternalTextureSamplingTestPipeline, drawInit, drawTexture} from './webgpu_draw_texture';
-import {createBindGroup, createBuffer, createIndexBuffer, createUniformBuffer, createVertexBuffer, presentationFormat} from './webgpu_util';
+import {createExternalTextureSamplingTestPipeline, drawTexture} from './webgpu_draw_texture';
+import {createBuffer} from './webgpu_util';
 
 let rafId;
-function getShader() {
+function getQuadShader() {
   const vertexShaderCode = `
   struct Uniforms {
     x : f32,
@@ -18,7 +18,7 @@ function getShader() {
   }
   
   @binding(0) @group(0) var<uniform> uniforms : Uniforms;
-  @binding(1) @group(0) var<uniform> uniformsTensor : Uniforms;
+  @binding(1) @group(0) var<storage> uniformsTensor : Uniforms;
   @vertex
   fn main(
     @builtin(vertex_index) VertexIndex : u32,
@@ -37,21 +37,6 @@ function getShader() {
     `;
   return [vertexShaderCode, fragmentShaderCode];
 }
-
-// prettier-ignore
-// TODO: below data is for a cube, but we only need a rectangle.
-export const cubeVertexArray = new Float32Array([
-  // float4 position, float4 color, float2 uv,
-  0.5,  0.5,  1, 1, 1, 0, 1, 1, 1, 1, -0.5, 0.5,  1, 1, 0, 0, 1, 1, 0, 1,
-  -0.5, -0.5, 1, 1, 1, 0, 1, 1, 1, 1, 0.5,  -0.5, 1, 1, 0, 0, 0, 1, 0, 0,
-]);
-
-export const indexArray = new Uint32Array([
-  // float4 position, float4 color, float2 uv,
-  0, 1, 1, 2, 2, 3, 3, 0
-]);
-
-
 
 let frameIndex = 0;
 function recordAndSubmit(pipeline) {
@@ -93,16 +78,6 @@ let verticesBuffer;
 let uniformBuffer;
 let bindGroup;
 
-function copyBuffer(srcBuffer, copySize = 16) {
-  const dstBuffer = createBuffer(
-      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, 16);
-  const commandEncoder = device.createCommandEncoder();
-  commandEncoder.copyBufferToBuffer(srcBuffer, 0, dstBuffer, 0, copySize);
-  const cmd = commandEncoder.finish();
-  device.queue.submit([cmd]);
-  return dstBuffer;
-}
-
 function getTensorBuffer() {
   const data = [0.2, 0.2, 1, 1];
   const dataB = [0, 0, 0, 0];
@@ -111,56 +86,39 @@ function getTensorBuffer() {
   const a = tf.tensor(data, [4], 'float32');
   const b = tf.tensor(dataB, [4], 'float32');
   const c = tf.add(a, b);
-  // await c.data();
   const res = c.dataToGPU();
   return res.buffer;
 }
 
-export function createBindGroup2(
-    device, pipeline, uniformBuffer, uniformBufferSize = 16, tesorBuffer,
-    tensorBufferSize = 16) {
-  const uniformBindGroup = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [
-      {
-        binding: 0,
-        resource: {
-          buffer: uniformBuffer,
-          offset: 0,
-          size: uniformBufferSize,
-        },
-      },
-      {
-        binding: 1,
-        resource: {
-          buffer: tesorBuffer,
-          offset: 0,
-          size: tensorBufferSize,
-        },
-      },
-    ],
-  });
-  return uniformBindGroup;
-}
+const TENSOR_UNIFORM_SIZE = 16;
+
 
 function drawQuadInit() {
-  // Create a vertex buffer from the cube data.
+  const quadVertexArray = new Float32Array([
+    // float4 position, float4 color, float2 uv,
+    0.5,  0.5,  1, 1, 1, 0, 1, 1, 1, 1, -0.5, 0.5,  1, 1, 0, 0, 1, 1, 0, 1,
+    -0.5, -0.5, 1, 1, 1, 0, 1, 1, 1, 1, 0.5,  -0.5, 1, 1, 0, 0, 0, 1, 0, 0,
+  ]);
+  
+  const quadIndexArray = new Uint32Array([
+    // float4 position, float4 color, float2 uv,
+    0, 1, 1, 2, 2, 3, 3, 0
+  ]);
+  
+  // Create a vertex buffer from the quad data.
   verticesBuffer = createBuffer(
-      device, GPUBufferUsage.VERTEX, cubeVertexArray.byteLength,
-      cubeVertexArray);
+      device, GPUBufferUsage.VERTEX, quadVertexArray.byteLength,
+      quadVertexArray);
   indexBuffer = createBuffer(
-      device, GPUBufferUsage.INDEX, indexArray.byteLength, indexArray);
+      device, GPUBufferUsage.INDEX, quadIndexArray.byteLength, quadIndexArray);
   uniformBuffer = createBuffer(
-      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, 16);
+      device, GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST, TENSOR_UNIFORM_SIZE);
 
+  const quadVertexSize = 4 * 10;  // Byte size of one quad vertex.
+  const quadPositionOffset = 0;
+  const quadUVOffset = 4 * 8;
 
-  const cubeVertexSize = 4 * 10;  // Byte size of one cube vertex.
-  const cubePositionOffset = 0;
-  const cubeColorOffset = 4 * 4;  // Byte offset of cube vertex color attribute.
-  const cubeUVOffset = 4 * 8;
-  const cubeVertexCount = 4;
-
-  const [vertexShaderCode, fragmentShaderCode] = getShader();
+  const [vertexShaderCode, fragmentShaderCode] = getQuadShader();
   const pipeline = device.createRenderPipeline({
     layout: 'auto',
     vertex: {
@@ -168,18 +126,18 @@ function drawQuadInit() {
       entryPoint: 'main',
       buffers: [
         {
-          arrayStride: cubeVertexSize,
+          arrayStride: quadVertexSize,
           attributes: [
             {
               // position
               shaderLocation: 0,
-              offset: cubePositionOffset,
+              offset: quadPositionOffset,
               format: 'float32x4',
             },
             {
               // uv
               shaderLocation: 1,
-              offset: cubeUVOffset,
+              offset: quadUVOffset,
               format: 'float32x2',
             },
           ],
@@ -191,7 +149,7 @@ function drawQuadInit() {
       entryPoint: 'main',
       targets: [
         {
-          format: presentationFormat,
+          format: navigator.gpu.getPreferredCanvasFormat(),
           blend: {
             color: {
               srcFactor: 'src-alpha',
@@ -211,8 +169,22 @@ function drawQuadInit() {
       topology: 'line-list',
     }
   });
-  bindGroup =
-      createBindGroup2(device, pipeline, uniformBuffer, 16, tensorBuffer, 16);
+  const bindings = [
+    {
+      buffer: uniformBuffer,
+      offset: 0,
+      size: TENSOR_UNIFORM_SIZE,
+    },
+    {
+      buffer: tensorBuffer,
+      offset: 0,
+      size: TENSOR_UNIFORM_SIZE,
+    }
+  ];
+  bindGroup = device.createBindGroup({
+    layout: pipeline.getBindGroupLayout(0),
+    entries: bindings.map((b, i) => ({binding: i, resource: b})),
+  });
   return pipeline;
 }
 
@@ -244,18 +216,17 @@ export async function getTFJSDevice() {
   const canvas = document.getElementById('canvas')
   const swapChain = canvas.getContext('webgpu');
 
-  const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
   swapChain.configure({
     device,
-    format: presentationFormat,
+    format: navigator.gpu.getPreferredCanvasFormat(),
     alphaMode: 'opaque',
   });
-  return [device, swapChain, presentationFormat];
+  return [device, swapChain];
 }
 
 
 async function drawTFJSInit() {
-  const [device, swapChain, presentationFormat] = await getTFJSDevice();
+  const [device, swapChain] = await getTFJSDevice();
   const pipeline = createExternalTextureSamplingTestPipeline(device);
   return [device, swapChain, pipeline];
 }
@@ -263,16 +234,13 @@ async function drawTFJSInit() {
 let camera;
 let quadPipeline;
 let device, swapChain, pipeline;
-let tensorBufferReal;
 let tensorBuffer;
 async function app() {
   const [device1, swapChain1, pipeline1] = await drawTFJSInit();
   device = device1;
   swapChain = swapChain1;
   pipeline = pipeline1;
-  tensorBufferReal = getTensorBuffer();
-  tensorBuffer = copyBuffer(tensorBufferReal);
-  console.log(tensorBuffer.usage);
+  tensorBuffer = getTensorBuffer();
 
   // Gui content will change depending on which model is in the query string.
   const config = {sizeOption: '640 X 480', targetFPS: 60};
